@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper Game</title>
+
+ <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            text-align: center;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .game-info {
+            margin-bottom: 15px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 40px);
+            justify-content: center;
+            gap: 4px;
+            margin: 20px auto;
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            background-color: #ced4da;
+            border: 1px solid #adb5bd;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .cell.revealed {
+            background-color: #e9ecef;
+            cursor: default;
+        }
+
+        .cell.mine {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .status {
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            margin-top: 25px;
+        }
+
+        .nav-links a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #0d6efd;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Minesweeper</h1>
+<p class="game-info">
+    This Minesweeper game was created with AI assistance and customized
+    to demonstrate JavaScript logic and interactivity.
+</p>
+
+<div class="board" id="board"></div>
+
+<p class="status" id="status"></p>
+
+<button onclick="resetGame()">Restart Game</button>
+
+<div class="nav-links">
+    <a href="index.html">Home</a> |
+    <a href="resume.html">Resume</a> |
+    <a href="scratch.html">Brazil</a>
+</div>
+
+<script>
+    const boardSize = 8;
+    const mineCount = 10;
+    let board = [];
+    let gameOver = false;
+
+    function createBoard() {
+        board = [];
+        gameOver = false;
+        document.getElementById("status").textContent = "";
+
+        const boardElement = document.getElementById("board");
+        boardElement.innerHTML = "";
+
+        // Initialize board
+        for (let i = 0; i < boardSize * boardSize; i++) {
+            board.push({
+                mine: false,
+                revealed: false,
+                count: 0
+            });
+        }
+
+        // Place mines
+        let minesPlaced = 0;
+        while (minesPlaced < mineCount) {
+            const index = Math.floor(Math.random() * board.length);
+            if (!board[index].mine) {
+                board[index].mine = true;
+                minesPlaced++;
+            }
+        }
+
+        // Calculate numbers
+        board.forEach((cell, index) => {
+            if (!cell.mine) {
+                cell.count = getNeighbors(index)
+                    .filter(i => board[i].mine).length;
+            }
+        });
+
+        // Render cells
+        board.forEach((cell, index) => {
+            const cellDiv = document.createElement("div");
+            cellDiv.className = "cell";
+            cellDiv.addEventListener("click", () => revealCell(index, cellDiv));
+            boardElement.appendChild(cellDiv);
+        });
+    }
+
+    function getNeighbors(index) {
+        const neighbors = [];
+        const row = Math.floor(index / boardSize);
+        const col = index % boardSize;
+
+        for (let r = -1; r <= 1; r++) {
+            for (let c = -1; c <= 1; c++) {
+                if (r === 0 && c === 0) continue;
+                const newRow = row + r;
+                const newCol = col + c;
+                if (
+                    newRow >= 0 && newRow < boardSize &&
+                    newCol >= 0 && newCol < boardSize
+                ) {
+                    neighbors.push(newRow * boardSize + newCol);
+                }
+            }
+        }
+        return neighbors;
+    }
+
+    function revealCell(index, cellDiv) {
+        if (gameOver || board[index].revealed) return;
+
+        board[index].revealed = true;
+        cellDiv.classList.add("revealed");
+
+        if (board[index].mine) {
+            cellDiv.classList.add("mine");
+            cellDiv.textContent = "💣";
+            endGame(false);
+        } else if (board[index].count > 0) {
+            cellDiv.textContent = board[index].count;
+        } else {
+            getNeighbors(index).forEach(i => {
+                const neighborCell = document.getElementById("board").children[i];
+                revealCell(i, neighborCell);
+            });
+        }
+
+        checkWin();
+    }
+
+    function endGame(won) {
+        gameOver = true;
+        document.getElementById("status").textContent =
+            won ? "🎉 You win!" : "💥 Game over!";
+    }
+
+    function checkWin() {
+        const unrevealed = board.filter(cell => !cell.revealed && !cell.mine);
+        if (unrevealed.length === 0 && !gameOver) {
+            endGame(true);
+        }
+    }
+
+    function resetGame() {
+        createBoard();
+    }
+
+    createBoard();
+</script>
+
+</body>
+</html>
